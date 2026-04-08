@@ -10,44 +10,42 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    # 1️⃣ Checkout code
+    # 1. Checkout code
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # 2️⃣ Docker login
+    # 2. Docker login
     - name: Docker Login
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # 3️⃣ Build image
+    # 3. Build image
     - name: Build Docker Image
-      run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest .
+      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest .
 
-    # 4️⃣ Push image
+    # 4. Push image
     - name: Push Docker Image
-      run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest
 
-    # 5️⃣ Set kubeconfig (VERY IMPORTANT for EC2)
+    # 5. Set kubeconfig
     - name: Set kubeconfig
-      run: |
-        export KUBECONFIG=$HOME/.kube/config
+      run: export KUBECONFIG=$HOME/.kube/config
 
-    # 6️⃣ Debug cluster connection
+    # 6. Verify cluster
     - name: Verify Cluster
       run: |
         kubectl get nodes
-        kubectl get pods -A
 
-    # 7️⃣ Ensure deployment exists (first time safety)
-    - name: Apply Kubernetes manifests (if not exists)
+    # 7. Apply only required manifests (NO VPA)
+    - name: Apply Kubernetes manifests
       run: |
-        kubectl apply -f k8s/
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+        kubectl apply -f k8s/hpa.yaml
 
-    # 8️⃣ Update image in deployment
+    # 8. Update deployment image
     - name: Deploy to Kubernetes
       run: |
         kubectl set image deployment/frontend-deployment -n default frontend=${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest
