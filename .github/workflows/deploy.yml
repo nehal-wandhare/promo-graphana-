@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: self-hosted
 
     steps:
-    - name: Checkout
+    - name: Checkout Code
       uses: actions/checkout@v3
 
     - name: Docker Login
@@ -24,3 +24,8 @@ jobs:
 
     - name: Push Image
       run: docker push ${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/frontend-deployment frontend=${{ secrets.DOCKER_USERNAME }}/devops-portfolio:latest
+        kubectl rollout restart deployment frontend-deployment
